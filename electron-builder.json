@@ -1,0 +1,42 @@
+{
+  "appId": "com.timetracker.app",
+  "productName": "Time Tracker",
+  "nodeGypRebuild": false,
+  "buildDependenciesFromSource": false,
+  "npmRebuild": false,
+  "directories": {
+    "output": "release",
+    "buildResources": "resources"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "resources/icons/",
+      "to": "icons/",
+      "filter": ["**/*"]
+    }
+  ],
+  "win": {
+    "target": ["nsis", "portable"],
+    "icon": "resources/icons/icon.png"
+  },
+  "mac": {
+    "target": ["dmg", "zip"],
+    "icon": "resources/icons/icon.icns",
+    "category": "public.app-category.productivity"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "icon": "resources/icons",
+    "category": "Utility"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+}
