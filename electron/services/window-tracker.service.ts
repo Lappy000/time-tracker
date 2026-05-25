@@ -76,6 +76,7 @@ class WindowTrackerService {
   };
   
   private pollInterval: NodeJS.Timeout | null = null;
+  private isPolling = false;
   private mainWindow: BrowserWindow | null = null;
 
   setMainWindow(window: BrowserWindow): void {
@@ -103,9 +104,11 @@ class WindowTrackerService {
       const interval = settings.tracking_interval || 1000;
 
       // Start polling
-      this.pollInterval = setInterval(() => {
-        this.pollActiveWindow();
-      }, interval);
+    this.pollInterval = setInterval(() => {
+      if (this.isPolling) return;
+      this.isPolling = true;
+      this.pollActiveWindow().finally(() => { this.isPolling = false; });
+    }, interval);
 
       // Poll immediately
       await this.pollActiveWindow();
@@ -186,9 +189,11 @@ class WindowTrackerService {
       const settings = SettingsRepository.getAppSettings();
       const interval = settings.tracking_interval || 1000;
 
-      this.pollInterval = setInterval(() => {
-        this.pollActiveWindow();
-      }, interval);
+    this.pollInterval = setInterval(() => {
+      if (this.isPolling) return;
+      this.isPolling = true;
+      this.pollActiveWindow().finally(() => { this.isPolling = false; });
+    }, interval);
 
       // Poll immediately
       await this.pollActiveWindow();

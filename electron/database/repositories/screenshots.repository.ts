@@ -205,15 +205,17 @@ export const ScreenshotsRepository = {
       LEFT JOIN applications a ON s.application_id = a.id
     `;
     
+    const params: string[] = [];
     if (startDate && endDate) {
-      totalQuery += ` WHERE date(timestamp) >= date('${startDate}') AND date(timestamp) <= date('${endDate}')`;
-      byAppQuery += ` WHERE date(s.timestamp) >= date('${startDate}') AND date(s.timestamp) <= date('${endDate}')`;
+      totalQuery += ` WHERE date(timestamp) >= date(?) AND date(timestamp) <= date(?)`;
+      byAppQuery += ` WHERE date(s.timestamp) >= date(?) AND date(s.timestamp) <= date(?)`;
+      params.push(startDate, endDate);
     }
     
     byAppQuery += ' GROUP BY s.application_id ORDER BY count DESC LIMIT 10';
     
-    const totalResult = db.prepare(totalQuery).get() as { total: number };
-    const byAppResult = db.prepare(byAppQuery).all() as { app_name: string; count: number }[];
+    const totalResult = db.prepare(totalQuery).get(...params) as { total: number };
+    const byAppResult = db.prepare(byAppQuery).all(...params) as { app_name: string; count: number }[];
     
     return {
       total: totalResult.total,

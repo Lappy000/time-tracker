@@ -43,7 +43,7 @@ export const LimitsRepository = {
             WHEN date(te.start_time) = ? THEN te.duration 
             ELSE 0 
           END
-        ) / 60000, 0) as used_minutes
+        ) / 60, 0) as used_minutes
       FROM category_limits cl
       JOIN categories c ON cl.category_id = c.id
       LEFT JOIN applications a ON a.category_id = c.id
@@ -81,7 +81,7 @@ export const LimitsRepository = {
             WHEN date(te.start_time) = ? THEN te.duration 
             ELSE 0 
           END
-        ) / 60000, 0) as used_minutes
+        ) / 60, 0) as used_minutes
       FROM category_limits cl
       JOIN categories c ON cl.category_id = c.id
       LEFT JOIN applications a ON a.category_id = c.id
@@ -141,7 +141,7 @@ export const LimitsRepository = {
             WHEN date(te.start_time) = ? THEN te.duration 
             ELSE 0 
           END
-        ) / 60000, 0) as used_minutes
+        ) / 60, 0) as used_minutes
       FROM category_limits cl
       JOIN categories c ON cl.category_id = c.id
       LEFT JOIN applications a ON a.category_id = c.id

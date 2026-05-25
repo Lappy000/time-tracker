@@ -113,10 +113,16 @@ if (!gotTheLock) {
 
   app.whenReady().then(() => {
     // Register file protocol handler for local files (screenshots)
-    protocol.handle('local-file', (request) => {
+protocol.handle('local-file', (request) => {
       const filePath = decodeURIComponent(request.url.replace('local-file://', ''));
-      // Normalize path for Windows
       const normalizedPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+      // Security: only allow access to files within userData (screenshots)
+      const userDataPath = app.getPath('userData').replace(/\\/g, '/');
+      const resolvedPath = path.resolve(normalizedPath).replace(/\\/g, '/');
+      if (!resolvedPath.startsWith(userDataPath)) {
+        return new Response('Forbidden: path traversal blocked', { status: 403 });
+      }
+      return net.fetch(`file:///${normalizedPath}`);
       
       try {
         if (fs.existsSync(normalizedPath)) {
