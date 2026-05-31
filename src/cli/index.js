@@ -13,7 +13,7 @@ class CliHandler {
   }
 
   /**
-   * Execute --quiet mode for CI/CD pipelines
+   * Execute --json output format flag
    * @param {...*} args - Arguments
    * @returns {Promise<*>} Result
    */
