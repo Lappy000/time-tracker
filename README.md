@@ -20,12 +20,14 @@ npm test
 - `build:electron`: strict Electron TypeScript compilation to `dist-electron/`.
 - `build`: both builds, without an installer or app launch.
 - `test:app`: manifest/lockfile checks and local-file protocol tests. Electron, file lookup and fetch are replaced with inert synthetic doubles; no tracking, screenshots or user database access occurs.
-- `test:legacy`: the existing Jest tests, unchanged.
+- `test:legacy`: all Jest tests, including the screenshot URL parser regression in `test/parser.test.js`.
 - `test`: both test groups; a failure in either returns a nonzero exit code.
 
-### Known legacy test failure
+### Screenshot URL regressions and retained helper tests
 
-`test/parser.test.js` imports `../src/parser`, which is absent from the repository. That suite fails to load; the other five legacy suites currently pass (20 tests). This is not suppressed or excluded from `npm test`. The scanner/CLI backfill modules and tests have been retained.
+The generated `ParserHandler` tests referenced `../src/parser`, a module that never existed. They are replaced in the same test file by tests of the actual screenshot URL conversion in `ScreenshotsPage.tsx`: missing paths, Windows separators, reserved filename characters, POSIX roots, Unicode and already-encoded URLs. The function is extracted with the TypeScript parser and evaluated without importing React or launching Electron. All five valid legacy helper/CLI suites remain unchanged.
+
+Raw screenshot paths are URL-encoded before display; literal `%`, `?` and `#` no longer corrupt the path or become query/fragment delimiters. Converting `file://` URLs preserves the absolute root and existing escapes.
 
 ## Interactive development and packaging
 

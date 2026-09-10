@@ -173,15 +173,14 @@ export function ScreenshotsPage() {
     if (!filePath) return '';
     // Already a URL (but convert file:// to local-file://)
     if (filePath.startsWith('file://')) {
-      const path = filePath.replace('file:///', '').replace('file://', '');
-      return `local-file://${path}`;
+      return filePath.replace('file://', 'local-file://');
     }
     if (filePath.startsWith('http') || filePath.startsWith('local-file://')) {
       return filePath;
     }
     // Convert Windows path to local-file:// URL format
     const normalizedPath = filePath.replace(/\\/g, '/');
-    return `local-file://${normalizedPath}`;
+    return `local-file://${encodeURI(normalizedPath).replace(/\?/g, '%3F').replace(/#/g, '%23')}`;
   };
 
   // Placeholder SVG for broken/missing images
