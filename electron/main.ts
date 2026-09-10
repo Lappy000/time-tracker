@@ -2,6 +2,7 @@
 import { app, BrowserWindow, protocol, net } from 'electron';
 import path from 'path';
 import * as fs from 'fs';
+import { pathToFileURL } from 'url';
 import { registerIpcHandlers, cleanupIpcHandlers } from './ipc/handlers';
 import { trackingService, screenshotService, notificationsService, setNotificationsServiceRef, shortcutsService } from './services';
 import { createTray, destroyTray } from './tray';
@@ -113,24 +114,42 @@ if (!gotTheLock) {
 
   app.whenReady().then(() => {
     // Register file protocol handler for local files (screenshots)
-protocol.handle('local-file', (request) => {
-      const filePath = decodeURIComponent(request.url.replace('local-file://', ''));
-      const normalizedPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
-      // Security: only allow access to files within userData (screenshots)
-      const userDataPath = app.getPath('userData').replace(/\\/g, '/');
-      const resolvedPath = path.resolve(normalizedPath).replace(/\\/g, '/');
-      if (!resolvedPath.startsWith(userDataPath)) {
-        return new Response('Forbidden: path traversal blocked', { status: 403 });
-      }
-      return net.fetch(`file:///${normalizedPath}`);
-      
+    protocol.handle('local-file', async (request) => {
       try {
-        if (fs.existsSync(normalizedPath)) {
-          return net.fetch(`file:///${normalizedPath}`);
+        const filePath = decodeURIComponent(request.url.replace('local-file://', ''));
+        // A file-style Windows URL may include /C:/; POSIX needs its leading /.
+        const normalizedPath = process.platform === 'win32' && /^\/[a-z]:[/\\]/i.test(filePath)
+          ? filePath.slice(1)
+          : filePath;
+        if (!path.isAbsolute(normalizedPath)) {
+          return new Response('Bad Request', { status: 400 });
         }
-        // Return 404 for missing files
-        return new Response('Not Found', { status: 404 });
+        // This protocol is for images, not the database or other userData files.
+        const screenshotsPath = path.resolve(app.getPath('userData'), 'screenshots');
+        const resolvedPath = path.resolve(normalizedPath);
+        const isWithin = (directory: string, file: string): boolean => {
+          const relativePath = path.relative(directory, file);
+          return Boolean(relativePath) && relativePath !== '..' &&
+            !relativePath.startsWith(`..${path.sep}`) && !path.isAbsolute(relativePath);
+        };
+        if (!isWithin(screenshotsPath, resolvedPath)) {
+          return new Response('Forbidden: path traversal blocked', { status: 403 });
+        }
+
+        // Resolve symlinks/junctions before authorizing the actual file target.
+        const realRoot = await fs.promises.realpath(screenshotsPath);
+        const realFile = await fs.promises.realpath(resolvedPath);
+        if (!isWithin(realRoot, realFile)) {
+          return new Response('Forbidden: path traversal blocked', { status: 403 });
+        }
+        return await net.fetch(pathToFileURL(realFile).href);
       } catch (error) {
+        if (error instanceof URIError) {
+          return new Response('Bad Request', { status: 400 });
+        }
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') {
+          return new Response('Not Found', { status: 404 });
+        }
         console.error('Error loading local file:', error);
         return new Response('Error', { status: 500 });
       }
